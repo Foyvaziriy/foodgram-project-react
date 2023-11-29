@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 """
@@ -28,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-!9yb=nbnvb_j-ko*4x=6e9tmz(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',]
 
 
 # Application definition
@@ -84,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB', 'django'),
         'USER': os.getenv('POSTGRES_USER', 'django'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', '1235'),
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', 5432),
     }

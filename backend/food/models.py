@@ -44,4 +44,4 @@ class RecipeTag(models.Model):
 class RecipeIngredient(models.Model):
     recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE,)
     ingredient_id = models.ForeignKey(Ingredient, on_delete=models.CASCADE,)
-    amount = models.DecimalField('Количество',)
+    amount = models.DecimalField('Количество', max_digits=5, decimal_places=2)
