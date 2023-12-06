@@ -6,6 +6,7 @@ from api import views
 
 router = DefaultRouter()
 router.register('users', views.UserViewSet)
+router.register('tags', views.TagViewSet)
 
 
 urlpatterns = [

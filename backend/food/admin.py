@@ -1,3 +1,13 @@
 from django.contrib import admin
 
-# Register your models here.
+from food.models import Tag
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    model = Tag
+    fields = (
+        'name',
+        'color',
+        'slug',
+    )
