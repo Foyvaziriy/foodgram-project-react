@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -24,9 +24,10 @@ User = get_user_model()
 
 
 class UserViewSet(DjoserUserViewSet):
+    ordering = ('username',)
 
     @action(
-        methods=["get", "put", "patch", "delete"],
+        methods=['get'],
         detail=False,
         permission_classes=[IsAuthenticated]
     )

@@ -153,6 +153,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'api.paginators.LimitPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.OrderingFilter'],
 }
 
 DJOSER = {
