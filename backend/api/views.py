@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework import status, filters
-from rest_framework.viewsets import GenericViewSet
+from rest_framework import status
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -21,8 +21,12 @@ from api.exceptions import (
     SelfSubscriptionError
 )
 from users.serializers import SubscribeSerializer
-from food.models import Tag
-from food.serializers import TagSerializer 
+from food.models import Tag, Ingredient, Recipe
+from food.serializers import (
+    TagSerializer,
+    IngredientSerializer,
+    RecipeSerializer
+)
 
 
 User = get_user_model()
@@ -112,3 +116,20 @@ class TagViewSet(
     queryset = get_all_objects(Tag)
     serializer_class = TagSerializer
     ordering = ('name',)
+
+
+class IngredientViewSet(
+    RetrieveModelMixin,
+    ListModelMixin,
+    GenericViewSet
+):
+    queryset = get_all_objects(Ingredient)
+    serializer_class = IngredientSerializer
+
+
+class RecipeViewSet(ModelViewSet):
+    queryset = get_all_objects(Recipe)
+    serializer_class = RecipeSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

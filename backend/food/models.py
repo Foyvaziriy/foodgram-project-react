@@ -10,9 +10,15 @@ class Tag(models.Model):
     color = models.CharField('Цвет тега', max_length=15, unique=True)
     slug = models.SlugField('Слаг тега', max_length=128, unique=True,)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class MeasurementUnit(models.Model):
-    name = models.CharField('единиа измерения', max_length=16, unique=True,)
+    name = models.CharField('Единица измерения', max_length=16, unique=True,)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -21,9 +27,12 @@ class Ingredient(models.Model):
     measurement_unit = models.ForeignKey(
         MeasurementUnit, on_delete=models.CASCADE,)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Recipe(models.Model):
-    tags = models.ManyToManyField(Tag, through='RecipeTag',)
+    tags = models.ManyToManyField(Tag)
     author = models.ForeignKey(User, on_delete=models.CASCADE,)
     ingredients = models.ManyToManyField(
         Ingredient, through='RecipeIngredient',)
@@ -33,15 +42,13 @@ class Recipe(models.Model):
     )
     image = models.ImageField('Картинка',)
     text = models.TextField('Текст рецепта',)
-    cooking_time = models.TimeField('Время готовки',)
+    cooking_time = models.IntegerField('Время готовки в часах',)
 
-
-class RecipeTag(models.Model):
-    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE,)
-    tag_id = models.ForeignKey(Tag, on_delete=models.CASCADE,)
+    def __str__(self) -> str:
+        return self.name
 
 
 class RecipeIngredient(models.Model):
-    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE,)
-    ingredient_id = models.ForeignKey(Ingredient, on_delete=models.CASCADE,)
+    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_ingredient')
+    ingredient_id = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='recipe_ingredient')
     amount = models.DecimalField('Количество', max_digits=5, decimal_places=2)

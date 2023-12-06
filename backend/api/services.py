@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from users.models import UserSubs
+from food.models import RecipeIngredient, Ingredient
 from api.exceptions import (
     AlreadySubscribedError,
     NotSubscribedError,
@@ -43,3 +44,16 @@ def get_subs_ids(user_id: int) -> list[tuple[int]]:
 def get_subscriptions(user_id: int) -> QuerySet:
     subs = UserSubs.objects.filter(user_id=user_id).values('sub_id')
     return User.objects.filter(id__in=Subquery(subs))
+
+
+def get_recipe_ingredients(recipe_id: int) -> QuerySet:
+    return Ingredient.objects.prefetch_related(
+        'recipe_ingredient').filter(recipe_ingredient__recipe_id=recipe_id)
+
+
+def get_ingredient_amount(recipe_id: int, ingredient_id: int) -> int:
+    return int(get_object_or_404(
+        RecipeIngredient,
+        recipe_id=recipe_id,
+        ingredient_id=ingredient_id
+    ).amount)

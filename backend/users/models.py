@@ -33,6 +33,9 @@ class User(AbstractUser):
             'last_name': self.last_name,
         }
 
+    def __str__(self) -> str:
+        return self.username
+
 
 class UserSubs(models.Model):
     user_id = models.ForeignKey(
