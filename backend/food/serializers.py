@@ -3,7 +3,7 @@ import base64
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 
-from food.models import Tag, Ingredient, Recipe, RecipeIngredient, RecipeTag
+from food.models import Tag, Ingredient, Recipe
 from users.serializers import UserSerializer
 from api.services import (
     get_ingredient_amount,

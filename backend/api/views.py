@@ -8,6 +8,7 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly
@@ -167,6 +168,8 @@ class RecipeViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
+        if request.method == HTTPMethod.PUT:
+            raise MethodNotAllowed(request.method)
         if request.user != self.get_object().author:
             return Response(
                 {'detail': 'Недостаточно прав'},
