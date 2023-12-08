@@ -1,23 +1,10 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
 
 from food.models import Tag, Ingredient, MeasurementUnit, Recipe
 
 
-User = get_user_model()
-
-
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    model = User
-    fields = (
-        'username',
-        'email',
-        'first_name',
-        'last_name',
-        'is_staff',
-        'is_active',
-    )
+class TagInline(admin.TabularInline):
+    model = Recipe.tags.through
 
 
 @admin.register(Tag)
@@ -57,11 +44,11 @@ class RecipeAdmin(admin.ModelAdmin):
         'name',
         'image',
         'text',
-        'tags',
         'cooking_time',
     )
     filter_horizontal = ('tags', 'ingredients',)
     inlines = (
         IngredientsInline,
+        TagInline
     )
-    exclude = ('ingredients',)
+    exclude = ('ingredients', 'tags',)

@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from users.models import UserSubs
-from food.models import RecipeIngredient, Ingredient
+from food.models import RecipeIngredient, RecipeTag, Ingredient, Recipe
 from api.exceptions import (
     AlreadySubscribedError,
     NotSubscribedError,
@@ -38,7 +38,8 @@ def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
 
 
 def get_subs_ids(user_id: int) -> list[tuple[int]]:
-    return UserSubs.objects.filter(user_id=user_id).values_list('sub_id')
+    return UserSubs.objects.filter(
+        user_id=user_id).values_list('sub_id', flat=True)
 
 
 def get_subscriptions(user_id: int) -> QuerySet:
@@ -57,3 +58,50 @@ def get_ingredient_amount(recipe_id: int, ingredient_id: int) -> int:
         recipe_id=recipe_id,
         ingredient_id=ingredient_id
     ).amount)
+
+
+def get_available_ids(model: Model) -> list[int]:
+    return model.objects.all().values_list('id', flat=True)
+
+
+def add_ingredients_to_recipe(
+        edit: bool,
+        recipe: Recipe,
+        ingredients_amounts: list[dict[str, int]]) -> None:
+    if edit:
+        RecipeIngredient.objects.filter(recipe_id=recipe.id).delete()
+
+    for ingredient in ingredients_amounts:
+        RecipeIngredient.objects.get_or_create(
+            recipe_id=recipe,
+            ingredient_id=Ingredient.objects.get(id=ingredient['id']),
+            amount=ingredient['amount']
+        )
+
+
+def add_tags_to_recipe(edit: bool,
+                       recipe: Recipe,
+                       tags_ids: list[int]) -> None:
+    if edit:
+        RecipeTag.objects.filter(recipe_id=recipe.id).delete()
+
+    for tag_id in tags_ids:
+        RecipeTag.objects.get_or_create(
+            recipe_id=recipe.id,
+            tag_id=tag_id
+        )
+
+
+def create_recipe(author_id: int,
+                  ingredients: list[dict[str, int]],
+                  tags_ids: list[int],
+                  **kwargs) -> Recipe:
+    recipe_instance = Recipe.objects.create(
+        author_id=author_id,
+        **kwargs
+    )
+
+    add_ingredients_to_recipe(False, recipe_instance, ingredients)
+    add_tags_to_recipe(False, recipe_instance, tags_ids)
+
+    return recipe_instance

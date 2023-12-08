@@ -1,3 +1,5 @@
+from http import HTTPMethod
+
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -6,7 +8,10 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from api.services import (
@@ -20,12 +25,14 @@ from api.exceptions import (
     NotSubscribedError,
     SelfSubscriptionError
 )
+from api.mixins import NoPutViewSetMixin
 from users.serializers import SubscribeSerializer
 from food.models import Tag, Ingredient, Recipe
 from food.serializers import (
     TagSerializer,
     IngredientSerializer,
-    RecipeSerializer
+    RecipeGETSerializer,
+    RecipePOSTSerializer
 )
 
 
@@ -89,7 +96,6 @@ class UserViewSet(DjoserUserViewSet):
         serializer_class=SubscribeSerializer,
     )
     def subscriptions(self, request: Request, pk: int = None):
-        print(self.serializer_class)
         queryset = get_subscriptions(request.user.id)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -129,7 +135,53 @@ class IngredientViewSet(
 
 class RecipeViewSet(ModelViewSet):
     queryset = get_all_objects(Recipe)
-    serializer_class = RecipeSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.request.method == HTTPMethod.GET:
+            serializer_class = RecipeGETSerializer
+        else:
+            serializer_class = RecipePOSTSerializer
+
+        return serializer_class
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = self.perform_create(serializer)
+        serializer = RecipeGETSerializer(
+            instance, context={'request': request})
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user != self.get_object().author:
+            return Response(
+                {'detail': 'Недостаточно прав'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if request.user != self.get_object().author:
+            return Response(
+                {'detail': 'Недостаточно прав'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        serializer = RecipeGETSerializer(
+            instance, context={'request': request})
+
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
         serializer.save(author=self.request.user)

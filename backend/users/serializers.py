@@ -59,4 +59,4 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        return (obj.id,) in get_subs_ids(user.id)
+        return obj.id in get_subs_ids(user.id)
