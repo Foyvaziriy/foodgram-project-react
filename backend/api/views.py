@@ -26,7 +26,6 @@ from api.exceptions import (
     NotSubscribedError,
     SelfSubscriptionError
 )
-from api.mixins import NoPutViewSetMixin
 from users.serializers import SubscribeSerializer
 from food.models import Tag, Ingredient, Recipe
 from food.serializers import (
