@@ -27,7 +27,7 @@ from api.exceptions import (
     SelfSubscriptionError
 )
 from users.serializers import SubscribeSerializer
-from food.models import Tag, Ingredient, Recipe
+from food.models import Tag, Ingredient, Recipe, FavoriteRecipe
 from food.serializers import (
     TagSerializer,
     IngredientSerializer,
@@ -41,6 +41,11 @@ User = get_user_model()
 
 class UserViewSet(DjoserUserViewSet):
     ordering = ('username',)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['subs'] = get_subscriptions(self.request.user.id)
+        return context
 
     @action(
         methods=['get'],
@@ -57,7 +62,7 @@ class UserViewSet(DjoserUserViewSet):
         serializer_class=SubscribeSerializer,
     )
     def subscribe(self, request: Request, id: int = None) -> Response:
-        if request.method == 'POST':
+        if request.method == HTTPMethod.POST:
             try:
                 user = get_object_or_404(User, id=id)
                 subscribe(request.user, user)
@@ -73,11 +78,12 @@ class UserViewSet(DjoserUserViewSet):
                 )
             serializer = self.serializer_class(
                 user,
-                context={'request': request}
+                context={'request': request,
+                         'subs': get_subscriptions(self.request.user.id)}
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        if request.method == 'DELETE':
+        if request.method == HTTPMethod.DELETE:
             try:
                 unsubscribe(request.user.id, id)
             except NotSubscribedError:
@@ -102,7 +108,8 @@ class UserViewSet(DjoserUserViewSet):
             serializer = self.serializer_class(
                 page,
                 many=True,
-                context={'request': request}
+                context={'request': request,
+                         'subs': get_subscriptions(self.request.user.id)}
             )
             return self.get_paginated_response(serializer.data)
 
@@ -131,11 +138,13 @@ class IngredientViewSet(
 ):
     queryset = get_all_objects(Ingredient)
     serializer_class = IngredientSerializer
+    ordering = ('name',)
 
 
 class RecipeViewSet(ModelViewSet):
     queryset = get_all_objects(Recipe)
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    ordering = ('name',)
 
     def get_serializer_class(self):
         if self.request.method == HTTPMethod.GET:
@@ -150,7 +159,7 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer)
         serializer = RecipeGETSerializer(
-            instance, context={'request': request})
+            instance, context={'request': request, 'subs': get_subscriptions(self.request.user.id)})
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -181,9 +190,29 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         serializer = RecipeGETSerializer(
-            instance, context={'request': request})
+            instance, context={'request': request, 'subs': get_subscriptions(self.request.user.id)})
 
         return Response(serializer.data)
 
     def perform_update(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(
+        methods=('post', 'delete'),
+        detail=True,
+        permission_classes=IsAuthenticated
+    )
+    def favorite(self, request, id=None):
+        if request.method == HTTPMethod.POST:
+            instance, _ = FavoriteRecipe.objects.get_or_create(
+                user=request.user,
+                recipe=get_object_or_404(Recipe, id=id))
+            serializer = self.serializer_class(instance)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == HTTPMethod.DELETE:
+            get_object_or_404(
+                FavoriteRecipe,
+                user_id=request.user.id,
+                recipe_id=id).delete()
+            return Response('', status=status.HTTP_204_NO_CONTENT)

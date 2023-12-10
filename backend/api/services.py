@@ -25,7 +25,7 @@ def subscribe(user: User, sub: User) -> QuerySet:
         raise SelfSubscriptionError
     if UserSubs.objects.filter(user_id=user.id, sub_id=sub.id).exists():
         raise AlreadySubscribedError
-    return UserSubs.objects.get_or_create(user_id=user, sub_id=sub)
+    return UserSubs.objects.get_or_create(user=user, sub=sub)
 
 
 def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
@@ -35,11 +35,6 @@ def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
         get_object_or_404(UserSubs, user_id=user, sub_id=sub).delete()
     except Http404:
         raise NotSubscribedError
-
-
-def get_subs_ids(user_id: int) -> list[tuple[int]]:
-    return UserSubs.objects.filter(
-        user_id=user_id).values_list('sub_id', flat=True)
 
 
 def get_subscriptions(user_id: int) -> QuerySet:
@@ -73,8 +68,8 @@ def add_ingredients_to_recipe(
 
     for ingredient in ingredients_amounts:
         RecipeIngredient.objects.get_or_create(
-            recipe_id=recipe,
-            ingredient_id=Ingredient.objects.get(id=ingredient['id']),
+            recipe=recipe,
+            ingredient=Ingredient.objects.get(id=ingredient['id']),
             amount=ingredient['amount']
         )
 
@@ -87,7 +82,7 @@ def add_tags_to_recipe(edit: bool,
 
     for tag_id in tags_ids:
         RecipeTag.objects.get_or_create(
-            recipe_id=recipe.id,
+            recipe=recipe,
             tag_id=tag_id
         )
 

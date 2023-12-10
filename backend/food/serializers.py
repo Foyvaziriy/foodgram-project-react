@@ -3,7 +3,7 @@ import base64
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 
-from food.models import Tag, Ingredient, Recipe
+from food.models import Tag, Ingredient, Recipe, FavoriteRecipe
 from users.serializers import UserSerializer
 from api.services import (
     get_ingredient_amount,
@@ -181,3 +181,21 @@ class RecipePOSTSerializer(serializers.ModelSerializer):
         )
 
         return instance
+
+
+class RecipeFavorite(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
+        read_only_fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )

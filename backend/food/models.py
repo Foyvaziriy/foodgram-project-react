@@ -62,12 +62,12 @@ class RecipeTag(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe_id = models.ForeignKey(
+    recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipe_ingredient'
     )
-    ingredient_id = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         related_name='recipe_ingredient'
@@ -76,4 +76,17 @@ class RecipeIngredient(models.Model):
         'Количество',
         max_digits=5,
         decimal_places=2
+    )
+
+
+class FavoriteRecipe(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_recipe'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorite_recipe'
     )
