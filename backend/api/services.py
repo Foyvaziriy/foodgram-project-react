@@ -1,11 +1,18 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Model, Subquery
+from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from users.models import UserSubs
-from food.models import RecipeIngredient, RecipeTag, Ingredient, Recipe
+from food.models import (
+    RecipeIngredient,
+    RecipeTag,
+    Ingredient,
+    Recipe,
+    FavoriteRecipe,
+    ShoppingCart
+)
 from api.exceptions import (
     AlreadySubscribedError,
     NotSubscribedError,
@@ -37,22 +44,37 @@ def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
         raise NotSubscribedError
 
 
+def get_subs_ids(user_id: int) -> list[int]:
+    return UserSubs.objects.filter(
+        user_id=user_id).values_list('sub_id', flat=True)
+
+
 def get_subscriptions(user_id: int) -> QuerySet:
-    subs = UserSubs.objects.filter(user_id=user_id).values('sub_id')
-    return User.objects.filter(id__in=Subquery(subs))
+    return User.objects.filter(id__in=get_subs_ids(user_id))
 
 
-def get_recipe_ingredients(recipe_id: int) -> QuerySet:
-    return Ingredient.objects.prefetch_related(
-        'recipe_ingredient').filter(recipe_ingredient__recipe_id=recipe_id)
+def get_recipe_ingredients_with_amounts(
+        recipe_id: int) -> list[QuerySet, dict[int, int]]:
+    ingredients: QuerySet = (
+        Ingredient.objects.prefetch_related(
+            'recipe_ingredient'
+        ).filter(
+            recipe_ingredient__recipe_id=recipe_id
+        )
+    )
 
+    ingredients_amounts: list[tuple[int, int]] = (
+        RecipeIngredient.objects.filter(
+            ingredient_id__in=ingredients.values_list('id', flat=True),
+            recipe_id=recipe_id
+        ).values_list('ingredient_id', 'amount')
+    )
 
-def get_ingredient_amount(recipe_id: int, ingredient_id: int) -> int:
-    return int(get_object_or_404(
-        RecipeIngredient,
-        recipe_id=recipe_id,
-        ingredient_id=ingredient_id
-    ).amount)
+    amounts: dict[int, int] = {}
+    for ingredient_id, amount in ingredients_amounts:
+        amounts[ingredient_id] = amount
+
+    return ingredients, amounts
 
 
 def get_available_ids(model: Model) -> list[int]:
@@ -100,3 +122,17 @@ def create_recipe(author_id: int,
     add_tags_to_recipe(False, recipe_instance, tags_ids)
 
     return recipe_instance
+
+
+def get_user_recipes(user: User) -> QuerySet:
+    return Recipe.objects.filter(author=user)
+
+
+def get_user_fav_or_shopping_recipes_ids(
+        user_id: int, is_shopping_cart: bool = False) -> list[int]:
+    if is_shopping_cart:
+        model = ShoppingCart
+    else:
+        model = FavoriteRecipe
+    return model.objects.filter(
+        user_id=user_id).values_list('recipe_id', flat=True)

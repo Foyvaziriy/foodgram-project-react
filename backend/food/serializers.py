@@ -3,11 +3,10 @@ import base64
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 
-from food.models import Tag, Ingredient, Recipe, FavoriteRecipe
+from food.models import Tag, Ingredient, Recipe
 from users.serializers import UserSerializer
 from api.services import (
-    get_ingredient_amount,
-    get_recipe_ingredients,
+    get_recipe_ingredients_with_amounts,
     get_available_ids,
     create_recipe,
     add_ingredients_to_recipe,
@@ -56,17 +55,14 @@ class InlineIngredientSerializer(serializers.ModelSerializer):
         )
 
     def get_amount(self, obj):
-        return get_ingredient_amount(
-            self.context.get('recipe_id'),
-            ingredient_id=obj.id
-        )
+        return self.context.get('amounts')[obj.id]
 
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     tags = TagSerializer(read_only=True, many=True)
-    author = UserSerializer(read_only=True)
+    author = serializers.SerializerMethodField()
     ingredients = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField('favorite')
+    is_favorited = serializers.SerializerMethodField('is_favorite')
     is_in_shopping_cart = serializers.SerializerMethodField('shopping_cart')
 
     class Meta:
@@ -90,17 +86,26 @@ class RecipeGETSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart',
         )
 
-    def favorite(self, obj):
-        return True
+    def get_author(self, obj):
+        return UserSerializer(
+            obj.author,
+            context={'request': self.context.get('request'),
+                     'subs_ids': self.context.get('subs_ids')}
+        ).data
+
+    def is_favorite(self, obj):
+        return obj.id in self.context.get('favorite_recipes_ids')
 
     def shopping_cart(self, obj):
-        return True
+        return obj.id in self.context.get('shopping_cart')
 
     def get_ingredients(self, obj):
+        ingredients, amounts = get_recipe_ingredients_with_amounts(obj.id)
         return InlineIngredientSerializer(
-            get_recipe_ingredients(obj.id),
+            ingredients,
             many=True,
-            context={'recipe_id': obj.id}
+            context={'recipe_id': obj.id,
+                     'amounts': amounts}
             ).data
 
 
@@ -181,21 +186,3 @@ class RecipePOSTSerializer(serializers.ModelSerializer):
         )
 
         return instance
-
-
-class RecipeFavorite(serializers.ModelSerializer):
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
-        read_only_fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )

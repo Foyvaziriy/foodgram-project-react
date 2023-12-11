@@ -19,15 +19,17 @@ from api.services import (
     get_all_objects,
     subscribe,
     unsubscribe,
-    get_subscriptions
+    get_subscriptions,
+    get_user_fav_or_shopping_recipes_ids,
+    get_subs_ids,
 )
 from api.exceptions import (
     AlreadySubscribedError,
     NotSubscribedError,
     SelfSubscriptionError
 )
-from users.serializers import SubscribeSerializer
-from food.models import Tag, Ingredient, Recipe, FavoriteRecipe
+from users.serializers import SubscribeSerializer, UserRecipesSerializer
+from food.models import Tag, Ingredient, Recipe, FavoriteRecipe, ShoppingCart
 from food.serializers import (
     TagSerializer,
     IngredientSerializer,
@@ -44,7 +46,10 @@ class UserViewSet(DjoserUserViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['subs'] = get_subscriptions(self.request.user.id)
+        context.update({
+            'request': self.request,
+            'subs_ids': get_subs_ids(self.request.user.id),
+        })
         return context
 
     @action(
@@ -78,8 +83,7 @@ class UserViewSet(DjoserUserViewSet):
                 )
             serializer = self.serializer_class(
                 user,
-                context={'request': request,
-                         'subs': get_subscriptions(self.request.user.id)}
+                context=self.get_serializer_context()
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -108,15 +112,14 @@ class UserViewSet(DjoserUserViewSet):
             serializer = self.serializer_class(
                 page,
                 many=True,
-                context={'request': request,
-                         'subs': get_subscriptions(self.request.user.id)}
+                context=self.get_serializer_context()
             )
             return self.get_paginated_response(serializer.data)
 
         serializer = self.serializer_class(
             queryset,
             many=True,
-            context={'request': request}
+            context=self.get_serializer_context()
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -154,12 +157,26 @@ class RecipeViewSet(ModelViewSet):
 
         return serializer_class
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({
+            'request': self.request,
+            'subs_ids': get_subs_ids(self.request.user.id),
+            'favorite_recipes_ids': get_user_fav_or_shopping_recipes_ids(
+                self.request.user.id),
+            'shopping_cart': get_user_fav_or_shopping_recipes_ids(
+                self.request.user.id, True),
+        })
+        return context
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer)
         serializer = RecipeGETSerializer(
-            instance, context={'request': request, 'subs': get_subscriptions(self.request.user.id)})
+            instance,
+            context=self.get_serializer_context()
+        )
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -190,7 +207,9 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         serializer = RecipeGETSerializer(
-            instance, context={'request': request, 'subs': get_subscriptions(self.request.user.id)})
+            instance,
+            context=self.get_serializer_context()
+        )
 
         return Response(serializer.data)
 
@@ -200,19 +219,61 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=('post', 'delete'),
         detail=True,
-        permission_classes=IsAuthenticated
+        permission_classes=(IsAuthenticated,),
+        serializer_class=UserRecipesSerializer
     )
-    def favorite(self, request, id=None):
+    def favorite(self, request, pk=None):
         if request.method == HTTPMethod.POST:
-            instance, _ = FavoriteRecipe.objects.get_or_create(
+            recipe = get_object_or_404(Recipe, id=pk)
+            _, is_created = FavoriteRecipe.objects.get_or_create(
                 user=request.user,
-                recipe=get_object_or_404(Recipe, id=id))
-            serializer = self.serializer_class(instance)
+                recipe=recipe)
+            serializer = self.serializer_class(
+                recipe,
+                context=self.get_serializer_context()
+            )
+
+            if not is_created:
+                return Response(
+                    {'details': 'Рецепт уже в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == HTTPMethod.DELETE:
             get_object_or_404(
                 FavoriteRecipe,
                 user_id=request.user.id,
-                recipe_id=id).delete()
+                recipe_id=pk).delete()
+            return Response('', status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=('post', 'delete'),
+        detail=True,
+        permission_classes=(IsAuthenticated,),
+        serializer_class=UserRecipesSerializer
+    )
+    def shopping_cart(self, request, pk=None):
+        if request.method == HTTPMethod.POST:
+            recipe = get_object_or_404(Recipe, id=pk)
+            _, is_created = ShoppingCart.objects.get_or_create(
+                user=request.user,
+                recipe=recipe)
+            serializer = self.serializer_class(
+                recipe,
+                context=self.get_serializer_context()
+            )
+
+            if not is_created:
+                return Response(
+                    {'details': 'Рецепт уже в списке покупок'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == HTTPMethod.DELETE:
+            get_object_or_404(
+                ShoppingCart,
+                user_id=request.user.id,
+                recipe_id=pk).delete()
             return Response('', status=status.HTTP_204_NO_CONTENT)
