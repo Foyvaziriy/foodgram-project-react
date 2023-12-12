@@ -160,3 +160,17 @@ def get_subs_recipes(user: User) -> dict[int, QuerySet]:
         subs_recipes[sub_id] = get_user_recipes(sub_id)
 
     return subs_recipes
+
+
+def get_user_shopping_cart(user_id: int) -> list[tuple[str, int, str]]:
+    return (
+        RecipeIngredient.objects.select_related(
+            'ingredient'
+        ).filter(
+            recipe_id__in=get_user_fav_or_shopping_recipes_ids(user_id, True)
+        ).select_related(
+            'ingredient__measurement_unit'
+        ).values_list(
+            'ingredient__name', 'amount', 'ingredient__measurement_unit__name'
+        )
+    )

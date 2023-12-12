@@ -1,7 +1,9 @@
+import csv
 from http import HTTPMethod
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -24,6 +26,7 @@ from api.services import (
     get_user_fav_or_shopping_recipes_ids,
     get_subs_ids,
     get_subs_recipes,
+    get_user_shopping_cart,
 )
 from api.exceptions import (
     AlreadySubscribedError,
@@ -289,3 +292,40 @@ class RecipeViewSet(ModelViewSet):
                 user_id=request.user.id,
                 recipe_id=pk).delete()
             return Response('', status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+            methods=('get',),
+            detail=False,
+            permission_classes=(IsAuthenticated,)
+    )
+    def download_shopping_cart(self, request, pk=None):
+        response = HttpResponse(
+            content_type='text/plain',
+            headers={
+                'Content-Disposition': (
+                    'attachment; filename="shopping_cart.txt"')
+            },
+        )
+
+        writer = csv.writer(response)
+        writer.writerow(('Список покупок',))
+        writer.writerow('')
+
+        amounts = {}
+        measurement_units = {}
+        shopping_cart = get_user_shopping_cart(self.request.user.id)
+
+        for ingredient, amount, measurement_unit in shopping_cart:
+            measurement_units[ingredient] = measurement_unit
+
+            if amounts.get(ingredient):
+                amounts[ingredient] += amount
+            else:
+                amounts[ingredient] = amount
+
+        for ing in amounts.keys():
+            writer.writerow(
+                [f'- {ing}: {amounts[ing]} {measurement_units[ing]}']
+            )
+
+        return response
