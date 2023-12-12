@@ -5,7 +5,6 @@ from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer
 )
 
-from api.services import get_user_recipes
 from food.models import Recipe
 
 
@@ -52,13 +51,14 @@ class UserRecipesSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'image',
-            'cooking_time'
+            'cooking_time',
         )
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -69,8 +69,12 @@ class SubscribeSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'is_subscribed',
-            'recipes'
+            'recipes',
+            'recipes_count'
         ]
+
+    def get_recipes_count(self, obj):
+        return len(self.context.get('subs_recipes')[obj.id])
 
     def get_is_subscribed(self, obj):
         subs = self.context.get('subs_ids')
@@ -78,6 +82,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         return UserRecipesSerializer(
-            get_user_recipes(obj),
-            many=True
+            self.context.get(
+                'subs_recipes')[obj.id][:self.context.get('recipes_limit')],
+            many=True,
         ).data

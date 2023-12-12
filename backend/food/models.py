@@ -72,10 +72,8 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='recipe_ingredient'
     )
-    amount = models.DecimalField(
+    amount = models.IntegerField(
         'Количество',
-        max_digits=5,
-        decimal_places=2
     )
 
 

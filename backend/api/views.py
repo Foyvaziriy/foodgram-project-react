@@ -13,6 +13,7 @@ from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly
 )
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from api.services import (
@@ -22,12 +23,14 @@ from api.services import (
     get_subscriptions,
     get_user_fav_or_shopping_recipes_ids,
     get_subs_ids,
+    get_subs_recipes,
 )
 from api.exceptions import (
     AlreadySubscribedError,
     NotSubscribedError,
     SelfSubscriptionError
 )
+from api.filters import RecipeFilterSet, IngredientFilterSet
 from users.serializers import SubscribeSerializer, UserRecipesSerializer
 from food.models import Tag, Ingredient, Recipe, FavoriteRecipe, ShoppingCart
 from food.serializers import (
@@ -49,7 +52,11 @@ class UserViewSet(DjoserUserViewSet):
         context.update({
             'request': self.request,
             'subs_ids': get_subs_ids(self.request.user.id),
+            'subs_recipes': get_subs_recipes(self.request.user)
         })
+        recipes_limit: str = self.request.query_params.get('recipes_limit')
+        if recipes_limit and recipes_limit.isdigit():
+            context['recipes_limit'] = int(recipes_limit)
         return context
 
     @action(
@@ -132,6 +139,7 @@ class TagViewSet(
     queryset = get_all_objects(Tag)
     serializer_class = TagSerializer
     ordering = ('name',)
+    pagination_class = None
 
 
 class IngredientViewSet(
@@ -142,12 +150,16 @@ class IngredientViewSet(
     queryset = get_all_objects(Ingredient)
     serializer_class = IngredientSerializer
     ordering = ('name',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilterSet
 
 
 class RecipeViewSet(ModelViewSet):
     queryset = get_all_objects(Recipe)
     permission_classes = (IsAuthenticatedOrReadOnly,)
     ordering = ('name',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilterSet
 
     def get_serializer_class(self):
         if self.request.method == HTTPMethod.GET:

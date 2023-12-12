@@ -11,7 +11,8 @@ from food.models import (
     Ingredient,
     Recipe,
     FavoriteRecipe,
-    ShoppingCart
+    ShoppingCart,
+    Tag
 )
 from api.exceptions import (
     AlreadySubscribedError,
@@ -124,8 +125,8 @@ def create_recipe(author_id: int,
     return recipe_instance
 
 
-def get_user_recipes(user: User) -> QuerySet:
-    return Recipe.objects.filter(author=user)
+def get_user_recipes(user_id: int) -> QuerySet:
+    return Recipe.objects.filter(author_id=user_id)
 
 
 def get_user_fav_or_shopping_recipes_ids(
@@ -136,3 +137,26 @@ def get_user_fav_or_shopping_recipes_ids(
         model = FavoriteRecipe
     return model.objects.filter(
         user_id=user_id).values_list('recipe_id', flat=True)
+
+
+def get_available_tags() -> list[tuple[str]]:
+    tag_choices = []
+    for tag in Tag.objects.all().values_list('slug', flat=True):
+        tag_choices.append((tag, None))
+    return tag_choices
+
+
+def get_recipes_ids_with_same_tag(tags: list[str]) -> list[int]:
+    return RecipeTag.objects.filter(
+        tag_id__in=(
+            Tag.objects.filter(slug__in=tags).values_list('id', flat=True)
+        )
+    ).values_list('recipe_id', flat=True)
+
+
+def get_subs_recipes(user: User) -> dict[int, QuerySet]:
+    subs_recipes = {}
+    for sub_id in get_subs_ids(user.id):
+        subs_recipes[sub_id] = get_user_recipes(sub_id)
+
+    return subs_recipes
