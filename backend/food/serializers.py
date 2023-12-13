@@ -136,11 +136,6 @@ class RecipePOSTSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def validate(self, attrs):
-        if set(attrs.keys()).symmetric_difference(self.Meta.fields):
-            raise serializers.ValidationError('All fields are required')
-        return super().validate(attrs)
-
     def validate_ingredients(self, value):
         for ingr in value:
             if ingr['id'] not in get_available_ids(Ingredient):
@@ -166,8 +161,10 @@ class RecipePOSTSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+        image = validated_data.get('image')
 
-        instance.image = validated_data.get('image')
+        if image:
+            instance.image = image
         instance.name = validated_data.get('name')
         instance.text = validated_data.get('text')
         instance.cooking_time = validated_data.get('cooking_time')

@@ -155,6 +155,7 @@ class IngredientViewSet(
     ordering = ('name',)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilterSet
+    pagination_class = None
 
 
 class RecipeViewSet(ModelViewSet):
@@ -216,9 +217,10 @@ class RecipeViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(
-            instance, data=request.data, partial=False)
+            instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         serializer = RecipeGETSerializer(

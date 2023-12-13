@@ -42,7 +42,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField('Картинка', upload_to='recipes/images/',)
     text = models.TextField('Текст рецепта',)
-    cooking_time = models.IntegerField('Время готовки в часах',)
+    cooking_time = models.IntegerField('Время готовки в минутах',)
 
     def __str__(self) -> str:
         return self.name
