@@ -4,6 +4,7 @@ from food.models import Recipe, Ingredient
 from api.services import (
     get_user_fav_or_shopping_recipes_ids,
     get_recipes_ids_with_same_tag,
+    get_tag_names,
 )
 
 
@@ -21,11 +22,7 @@ class RecipeFilterSet(django_filters.FilterSet):
     is_in_shopping_cart = django_filters.NumberFilter(method='shopping_cart')
     tags = django_filters.MultipleChoiceFilter(
         method='by_tags',
-        choices=(
-            ('breakfast', None,),
-            ('lunch', None,),
-            ('dinner', None,),
-        )
+        choices=get_tag_names()
     )
 
     class Meta:
@@ -38,7 +35,6 @@ class RecipeFilterSet(django_filters.FilterSet):
         ]
 
     def by_tags(self, queryset, name, value):
-        print(value)
         return queryset.filter(id__in=get_recipes_ids_with_same_tag(value))
 
     def favorite(self, queryset, name, value):

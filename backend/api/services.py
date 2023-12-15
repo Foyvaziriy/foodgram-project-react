@@ -139,13 +139,6 @@ def get_user_fav_or_shopping_recipes_ids(
         user_id=user_id).values_list('recipe_id', flat=True)
 
 
-def get_available_tags() -> list[tuple[str]]:
-    tag_choices = []
-    for tag in Tag.objects.all().values_list('slug', flat=True):
-        tag_choices.append((tag, None))
-    return tag_choices
-
-
 def get_recipes_ids_with_same_tag(tags: list[str]) -> list[int]:
     return RecipeTag.objects.filter(
         tag_id__in=(
@@ -174,3 +167,7 @@ def get_user_shopping_cart(user_id: int) -> list[tuple[str, int, str]]:
             'ingredient__name', 'amount', 'ingredient__measurement_unit__name'
         )
     )
+
+
+def get_tag_names() -> list[tuple[str, None]]:
+    return [(tag.slug, None) for tag in Tag.objects.all()]
