@@ -171,3 +171,7 @@ def get_user_shopping_cart(user_id: int) -> list[tuple[str, int, str]]:
 
 def get_tag_names() -> list[tuple[str, None]]:
     return [(tag.slug, None) for tag in Tag.objects.all()]
+
+
+def get_favorited_count(recipe_id: int) -> int:
+    return FavoriteRecipe.objects.filter(recipe_id=recipe_id).count()

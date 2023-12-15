@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
 from food.models import Tag, Ingredient, MeasurementUnit, Recipe
+from api.services import get_favorited_count
 
 
 class TagInline(admin.TabularInline):
@@ -46,12 +48,14 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     model = Recipe
+    readonly_fields = ('is_favorited_count',)
     fields = (
         'author',
         'name',
         'image',
         'text',
         'cooking_time',
+        'is_favorited_count',
     )
     filter_horizontal = ('tags', 'ingredients',)
     inlines = (
@@ -68,3 +72,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'name',
         'tags',
     )
+
+    @admin.display(description='Количество добавлений рецепта в избранное')
+    def is_favorited_count(self, instance):
+        return mark_safe(f'<dev>{get_favorited_count(instance.id)}</dev>')
