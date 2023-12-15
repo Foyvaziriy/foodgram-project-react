@@ -38,6 +38,7 @@ class RecipeFilterSet(django_filters.FilterSet):
         ]
 
     def by_tags(self, queryset, name, value):
+        print(value)
         return queryset.filter(id__in=get_recipes_ids_with_same_tag(value))
 
     def favorite(self, queryset, name, value):
