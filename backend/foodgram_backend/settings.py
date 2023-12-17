@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -19,8 +19,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -34,7 +32,9 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-!9yb=nbnvb_j-ko*4x=6e9tmz(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'foodgram.serveminecraft.net']
+
+CSRF_TRUSTED_ORIGINS = ['http://*.51.250.98.165', 'https://*.127.0.0.1', 'https://*.foodgram.serveminecraft.net']
 
 
 # Application definition

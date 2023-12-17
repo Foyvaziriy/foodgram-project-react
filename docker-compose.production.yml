@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3'
 
 services:
   db:
@@ -23,7 +23,7 @@ services:
     container_name: foodgram_frontend
     image: itsmeemichka/foodgram_frontend
     env_file: .env
-    command: cp -r /app/result_build/. /static/
+    command: cp -r /app/build/. /static/
     volumes:
       - static:/static
 
@@ -36,6 +36,8 @@ services:
     volumes:
       - static:/static
       - media:/media
+    depends_on:
+      - backend
 
 volumes:
   pg_data:

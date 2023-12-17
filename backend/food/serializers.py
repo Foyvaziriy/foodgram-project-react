@@ -106,7 +106,7 @@ class RecipeGETSerializer(serializers.ModelSerializer):
             many=True,
             context={'recipe_id': obj.id,
                      'amounts': amounts}
-            ).data
+        ).data
 
 
 class Base64ImageField(serializers.ImageField):
