@@ -52,14 +52,7 @@ class Command(BaseCommand):
                     name=ingredient_name, measurement_unit=measurement_unit
                 )
             except IntegrityError as err:
-                if str(err).split(' ')[0] == 'UNIQUE':
-                    self.stdout.write(
-                        f'Ингредиент - {ingredient_name} уже существует.')
-                elif str(err).split(' ')[0] == 'FOREIGN':
-                    self.stdout.write('Объект-родитель не найден')
-                else:
-                    err = str(err)
-                    self.stdout.write(f'Ошибка в данных: {err}')
+                self.stdout.write(f'Ошибка в данных: {err}')
             if is_created:
                 self.stdout.write(f'Ингредиент - {ingredient} добавлен.')
             else:
