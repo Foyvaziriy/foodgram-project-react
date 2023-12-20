@@ -5,6 +5,9 @@ from food.models import Tag, Ingredient, MeasurementUnit, Recipe
 from api.services import get_favorited_count
 
 
+INGREDIENTS_MIN_NUM: int = 1
+
+
 class TagInline(admin.TabularInline):
     model = Recipe.tags.through
 
@@ -27,6 +30,7 @@ class MeasurementUnitAdmin(admin.ModelAdmin):
 
 class IngredientsInline(admin.TabularInline):
     model = Recipe.ingredients.through
+    min_num = INGREDIENTS_MIN_NUM
 
 
 @admin.register(Ingredient)
