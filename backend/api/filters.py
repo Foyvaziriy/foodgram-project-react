@@ -40,7 +40,7 @@ class RecipeFilterSet(django_filters.FilterSet):
     def favorite(self, queryset, name, value):
         if not self.request.user:
             return queryset
-        favs = get_user_fav_or_shopping_recipes_ids(self.request.user.id)
+        favs = get_user_fav_or_shopping_recipes_ids(self.request.user)
         if value:
             return queryset.filter(id__in=favs)
         return queryset.exclude(id__in=favs)
@@ -49,7 +49,7 @@ class RecipeFilterSet(django_filters.FilterSet):
         if not self.request.user:
             return queryset
         shopping_cart = get_user_fav_or_shopping_recipes_ids(
-            self.request.user.id, is_shopping_cart=True)
+            self.request.user, is_shopping_cart=True)
         if value:
             return queryset.filter(id__in=shopping_cart)
         return queryset.exclude(id__in=shopping_cart)
