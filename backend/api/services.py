@@ -34,11 +34,10 @@ def subscribe(user: User, sub: User) -> QuerySet:
     return UserSubs.objects.get_or_create(user=user, sub=sub)
 
 
-def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
-    user = get_object_or_404(User, id=user_id)
+def unsubscribe(user: User, sub_id: int) -> QuerySet:
     sub = get_object_or_404(User, id=sub_id)
     try:
-        get_object_or_404(UserSubs, user_id=user, sub_id=sub).delete()
+        get_object_or_404(UserSubs, user=user, sub_id=sub).delete()
     except Http404:
         raise NotSubscribedError
 

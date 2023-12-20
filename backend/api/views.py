@@ -99,7 +99,7 @@ class UserViewSet(DjoserUserViewSet):
 
         if request.method == HTTPMethod.DELETE:
             try:
-                unsubscribe(request.user.id, id)
+                unsubscribe(request.user, id)
             except NotSubscribedError:
                 return Response(
                     {'errors': 'Вы не подписаны на этого пользователя'},
