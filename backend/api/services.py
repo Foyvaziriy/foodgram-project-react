@@ -43,6 +43,8 @@ def unsubscribe(user: User, sub_id: int) -> QuerySet:
 
 
 def get_subs_ids(user: User) -> list[int]:
+    if not user.is_authenticated:
+        return []
     return user.user_subscriptions.all().values_list('sub_id', flat=True)
 
 
@@ -127,6 +129,8 @@ def get_user_recipes(user_id: int) -> QuerySet:
 
 def get_user_fav_or_shopping_recipes_ids(
         user: User, is_shopping_cart: bool = False) -> list[int]:
+    if not user.is_authenticated:
+        return []
     if is_shopping_cart:
         return user.shopping_cart.all().values_list('recipe_id', flat=True)
     return user.favorite_recipe.all().values_list('recipe_id', flat=True)
