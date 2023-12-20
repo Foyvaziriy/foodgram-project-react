@@ -161,7 +161,7 @@ class IngredientViewSet(
 class RecipeViewSet(ModelViewSet):
     queryset = get_all_objects(Recipe)
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    ordering = ('name',)
+    ordering = ('created_at',)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilterSet
 
@@ -179,9 +179,9 @@ class RecipeViewSet(ModelViewSet):
             'request': self.request,
             'subs_ids': get_subs_ids(self.request.user.id),
             'favorite_recipes_ids': get_user_fav_or_shopping_recipes_ids(
-                self.request.user.id),
+                self.request.user),
             'shopping_cart': get_user_fav_or_shopping_recipes_ids(
-                self.request.user.id, True),
+                self.request.user, True),
         })
         return context
 
@@ -315,7 +315,7 @@ class RecipeViewSet(ModelViewSet):
 
         amounts = {}
         measurement_units = {}
-        shopping_cart = get_user_shopping_cart(self.request.user.id)
+        shopping_cart = get_user_shopping_cart(self.request.user)
 
         for ingredient, amount, measurement_unit in shopping_cart:
             measurement_units[ingredient] = measurement_unit

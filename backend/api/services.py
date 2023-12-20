@@ -130,13 +130,10 @@ def get_user_recipes(user_id: int) -> QuerySet:
 
 
 def get_user_fav_or_shopping_recipes_ids(
-        user_id: int, is_shopping_cart: bool = False) -> list[int]:
+        user: User, is_shopping_cart: bool = False) -> list[int]:
     if is_shopping_cart:
-        model = ShoppingCart
-    else:
-        model = FavoriteRecipe
-    return model.objects.filter(
-        user_id=user_id).values_list('recipe_id', flat=True)
+        return user.shopping_cart.all().values_list('recipe_id', flat=True)
+    return user.favorite_recipe.all().values_list('recipe_id', flat=True)
 
 
 def get_recipes_ids_with_same_tag(tags: list[str]) -> list[int]:
@@ -155,12 +152,12 @@ def get_subs_recipes(user: User) -> dict[int, QuerySet]:
     return subs_recipes
 
 
-def get_user_shopping_cart(user_id: int) -> list[tuple[str, int, str]]:
+def get_user_shopping_cart(user: User) -> list[tuple[str, int, str]]:
     return (
         RecipeIngredient.objects.select_related(
             'ingredient'
         ).filter(
-            recipe_id__in=get_user_fav_or_shopping_recipes_ids(user_id, True)
+            recipe_id__in=get_user_fav_or_shopping_recipes_ids(user, True)
         ).select_related(
             'ingredient__measurement_unit'
         ).values_list(
