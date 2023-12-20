@@ -89,12 +89,14 @@ def add_ingredients_to_recipe(
     if edit:
         RecipeIngredient.objects.filter(recipe_id=recipe.id).delete()
 
-    for ingredient in ingredients_amounts:
-        RecipeIngredient.objects.get_or_create(
-            recipe=recipe,
-            ingredient=Ingredient.objects.get(id=ingredient['id']),
-            amount=ingredient['amount']
-        )
+    RecipeIngredient.objects.bulk_create(
+        [
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient_id=ing['id'],
+                amount=ing['amount']) for ing in ingredients_amounts
+        ]
+    )
 
 
 def add_tags_to_recipe(edit: bool,
@@ -103,11 +105,9 @@ def add_tags_to_recipe(edit: bool,
     if edit:
         RecipeTag.objects.filter(recipe_id=recipe.id).delete()
 
-    for tag_id in tags_ids:
-        RecipeTag.objects.get_or_create(
-            recipe=recipe,
-            tag_id=tag_id
-        )
+    RecipeTag.objects.bulk_create(
+        [RecipeTag(recipe=recipe, tag_id=tag_id) for tag_id in tags_ids]
+    )
 
 
 def create_recipe(author_id: int,
@@ -174,4 +174,6 @@ def get_tag_names() -> list[tuple[str, None]]:
 
 
 def get_favorited_count(recipe_id: int) -> int:
-    return FavoriteRecipe.objects.filter(recipe_id=recipe_id).count()
+    return get_object_or_404(
+        Recipe, id=recipe_id
+    ).favorite_recipe.all().count()
