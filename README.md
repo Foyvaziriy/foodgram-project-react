@@ -13,7 +13,7 @@
 **Имя:** Эмилар Локтев  
 **Почта:** emilar-l@yandex.ru
 ### Как запустить проект
-1. Скачать файл `docker-compose-production.yml
+1. Скачать файл `docker-compose-production.yml`
 2. В той же директории создать файл `.env` со следующими переменными:
 	- SECRET_KEY
 	- DEBUG
