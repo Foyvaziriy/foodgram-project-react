@@ -5,23 +5,20 @@ from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
     first_name = models.CharField(
-        _("first name"),
+        _('first name'),
         max_length=150,
-        blank=False,
-        null=False,
     )
     last_name = models.CharField(
-        _("last name"),
+        _('last name'),
         max_length=150,
-        blank=False,
-        null=False,
     )
     email = models.EmailField(
-        _("email address"),
+        _('email address'),
         unique=True,
-        blank=False,
-        null=False,
     )
+
+    class Meta:
+        ordering = ('first_name',)
 
     @property
     def data(self):
@@ -52,3 +49,6 @@ class UserSubs(models.Model):
         blank=False,
         null=False,
     )
+
+    class Meta:
+        ordering = ('user',)
