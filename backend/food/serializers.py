@@ -3,7 +3,10 @@ import base64
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 
-from food.models import Tag, Ingredient, Recipe
+from food.models import (
+    Tag, Ingredient, Recipe,
+    MIN_COOKING_TIME_AND_AMOUNT, MAX_COOKING_TIME_AND_AMOUNT
+)
 from users.serializers import UserSerializer
 from api.services import (
     get_recipe_ingredients_with_amounts,
@@ -39,6 +42,35 @@ class IngredientSerializer(serializers.ModelSerializer):
             'name',
             'measurement_unit',
         )
+
+
+class IngredientPOSTSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField(
+        min_value=MIN_COOKING_TIME_AND_AMOUNT,
+        max_value=MAX_COOKING_TIME_AND_AMOUNT
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = (
+            'id',
+            'amount'
+        )
+
+    def validate(self, attrs):
+        dif = set(self.Meta.fields).symmetric_difference(set(attrs))
+        if dif:
+            raise serializers.ValidationError(
+                f'Поля {dif} не предоставлены'
+            )
+        return super().validate(attrs)
+
+    def validate_id(self, value):
+        if value not in get_available_ids(Ingredient):
+            raise serializers.ValidationError(
+                f'Ингредиента {value} не существует')
+        return value
 
 
 class InlineIngredientSerializer(serializers.ModelSerializer):
@@ -121,9 +153,12 @@ class Base64ImageField(serializers.ImageField):
 
 class RecipePOSTSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    ingredients = serializers.ListField(
-        child=serializers.DictField(child=serializers.IntegerField()))
+    ingredients = IngredientPOSTSerializer(many=True)
     tags = serializers.ListField(child=serializers.IntegerField())
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_COOKING_TIME_AND_AMOUNT,
+        max_value=MAX_COOKING_TIME_AND_AMOUNT
+    )
 
     class Meta:
         model = Recipe
@@ -136,18 +171,14 @@ class RecipePOSTSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def validate_ingredients(self, value):
-        for ingr in value:
-            if ingr['id'] not in get_available_ids(Ingredient):
-                raise serializers.ValidationError(
-                    'Такого ингредиента не существует')
-        return value
-
     def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Получен пустой список')
         for tag_id in value:
             if tag_id not in get_available_ids(Tag):
                 raise serializers.ValidationError(
-                    'Такого тэга не существует')
+                    'Такого тега не существует')
         return value
 
     def create(self, validated_data):
