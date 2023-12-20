@@ -37,14 +37,14 @@ class User(AbstractUser):
 class UserSubs(models.Model):
     user = models.ForeignKey(
         User,
-        related_name='user_id',
+        related_name='user_subscriptions',
         on_delete=models.CASCADE,
         blank=False,
         null=False,
     )
     sub = models.ForeignKey(
         User,
-        related_name='sub_id',
+        related_name='user_subscribers',
         on_delete=models.CASCADE,
         blank=False,
         null=False,

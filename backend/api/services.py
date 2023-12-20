@@ -10,8 +10,6 @@ from food.models import (
     RecipeTag,
     Ingredient,
     Recipe,
-    FavoriteRecipe,
-    ShoppingCart,
     Tag
 )
 from api.exceptions import (
@@ -45,13 +43,12 @@ def unsubscribe(user_id: int, sub_id: int) -> QuerySet:
         raise NotSubscribedError
 
 
-def get_subs_ids(user_id: int) -> list[int]:
-    return UserSubs.objects.filter(
-        user_id=user_id).values_list('sub_id', flat=True)
+def get_subs_ids(user: User) -> list[int]:
+    return user.user_subscriptions.all().values_list('sub_id', flat=True)
 
 
-def get_subscriptions(user_id: int) -> QuerySet:
-    return User.objects.filter(id__in=get_subs_ids(user_id))
+def get_subscriptions(user: User) -> QuerySet:
+    return User.objects.filter(id__in=get_subs_ids(user))
 
 
 def get_recipe_ingredients_with_amounts(
@@ -146,7 +143,7 @@ def get_recipes_ids_with_same_tag(tags: list[str]) -> list[int]:
 
 def get_subs_recipes(user: User) -> dict[int, QuerySet]:
     subs_recipes = {}
-    for sub_id in get_subs_ids(user.id):
+    for sub_id in get_subs_ids(user):
         subs_recipes[sub_id] = get_user_recipes(sub_id)
 
     return subs_recipes

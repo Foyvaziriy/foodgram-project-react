@@ -54,7 +54,7 @@ class UserViewSet(DjoserUserViewSet):
         context = super().get_serializer_context()
         context.update({
             'request': self.request,
-            'subs_ids': get_subs_ids(self.request.user.id),
+            'subs_ids': get_subs_ids(self.request.user),
             'subs_recipes': get_subs_recipes(self.request.user)
         })
         recipes_limit: str = self.request.query_params.get('recipes_limit')
@@ -116,7 +116,7 @@ class UserViewSet(DjoserUserViewSet):
         serializer_class=SubscribeSerializer,
     )
     def subscriptions(self, request: Request, pk: int = None):
-        queryset = get_subscriptions(request.user.id)
+        queryset = get_subscriptions(request.user)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.serializer_class(
@@ -177,7 +177,7 @@ class RecipeViewSet(ModelViewSet):
         context = super().get_serializer_context()
         context.update({
             'request': self.request,
-            'subs_ids': get_subs_ids(self.request.user.id),
+            'subs_ids': get_subs_ids(self.request.user),
             'favorite_recipes_ids': get_user_fav_or_shopping_recipes_ids(
                 self.request.user),
             'shopping_cart': get_user_fav_or_shopping_recipes_ids(
