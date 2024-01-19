@@ -13,6 +13,7 @@
 ### Автор
 **Имя:** Эмилар Локтев  
 **Почта:** emilar-l@yandex.ru
+**Telegram** @itsme_emichka
 ### Как запустить проект
 1. Скачать файл `docker-compose-production.yml`
 2. В той же директории создать файл `.env` со следующими переменными:
@@ -24,7 +25,7 @@
 	- DB_HOST
 	- DB_PORT
 	- ALLOWED_HOSTS
-    - CSRF_TRUSTED_ORIGINS
+        - CSRF_TRUSTED_ORIGINS
 3. Находясь в этой директории прописать команду:
 
    `docker compose -f docker-compose.production.yml up -d`
